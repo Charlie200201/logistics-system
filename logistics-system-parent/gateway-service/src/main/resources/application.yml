@@ -1,0 +1,43 @@
+server:
+  port: 8085
+
+spring:
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+        - id: logistics-service
+          uri: lb://logistics-service
+          predicates:
+            - Path=/api/logistics/**
+        - id: log-query
+          uri: lb://gateway-service
+          predicates:
+            - Path=/api/logs/**
+    sentinel:
+      transport:
+        dashboard: localhost:8099
+      filter:
+        enabled: false
+      scg:
+        order: -100
+
+elasticsearch:
+  host: localhost
+  port: 9200
+  scheme: http

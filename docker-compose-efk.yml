@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.12.1
+    container_name: filebeat
+    user: root
+    command: bash -c "cp /usr/share/filebeat/filebeat.yml /tmp/filebeat.yml && chmod go-w /tmp/filebeat.yml && filebeat -e -c /tmp/filebeat.yml"
+    volumes:
+      - ./elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/logs/app:ro
+      - /var/log/nginx:/logs/nginx:ro
+      - /logs/xxl-job:/logs/xxl-job:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.12.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    restart: unless-stopped

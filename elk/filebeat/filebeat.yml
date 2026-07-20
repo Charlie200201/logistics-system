@@ -1,0 +1,126 @@
+filebeat.inputs:
+  # 微服务应用 JSON 日志
+  - type: log
+    enabled: true
+    paths:
+      - /logs/app/user-service.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: application
+      app_name: user-service
+    fields_under_root: true
+
+  - type: log
+    enabled: true
+    paths:
+      - /logs/app/product-service.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: application
+      app_name: product-service
+    fields_under_root: true
+
+  - type: log
+    enabled: true
+    paths:
+      - /logs/app/order-service.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: application
+      app_name: order-service
+    fields_under_root: true
+
+  - type: log
+    enabled: true
+    paths:
+      - /logs/app/logistics-service.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: application
+      app_name: logistics-service
+    fields_under_root: true
+
+  - type: log
+    enabled: true
+    paths:
+      - /logs/app/gateway-service.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: application
+      app_name: gateway-service
+    fields_under_root: true
+
+  # Nginx 访问日志 (JSON 格式)
+  - type: log
+    enabled: true
+    paths:
+      - /logs/nginx/access.json.log
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: nginx-access
+    fields_under_root: true
+
+  # Nginx 错误日志
+  - type: log
+    enabled: true
+    paths:
+      - /logs/nginx/error.log
+    fields:
+      log_type: nginx-error
+    fields_under_root: true
+
+  # XXL-JOB 日志
+  - type: log
+    enabled: true
+    paths:
+      - /logs/xxl-job/*.log
+    fields:
+      log_type: xxl-job
+    fields_under_root: true
+    multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+    multiline.negate: true
+    multiline.match: after
+
+# ==================== Output ====================
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  ilm.enabled: false
+  indices:
+    - index: "app-logs-user-service-%{+yyyy.MM.dd}"
+      when.equals:
+        app_name: "user-service"
+    - index: "app-logs-product-service-%{+yyyy.MM.dd}"
+      when.equals:
+        app_name: "product-service"
+    - index: "app-logs-order-service-%{+yyyy.MM.dd}"
+      when.equals:
+        app_name: "order-service"
+    - index: "app-logs-logistics-service-%{+yyyy.MM.dd}"
+      when.equals:
+        app_name: "logistics-service"
+    - index: "app-logs-gateway-service-%{+yyyy.MM.dd}"
+      when.equals:
+        app_name: "gateway-service"
+    - index: "nginx-access-%{+yyyy.MM.dd}"
+      when.equals:
+        log_type: "nginx-access"
+    - index: "nginx-error-%{+yyyy.MM.dd}"
+      when.equals:
+        log_type: "nginx-error"
+    - index: "xxl-job-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.log_type: "xxl-job"
+
+# ==================== Logging ====================
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  keepfiles: 7
+setup.ilm.enabled: false

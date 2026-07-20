@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能物流追踪系统 - 订单查询</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; padding: 24px; text-align: center; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .container { max-width: 800px; margin: 24px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 18px; margin-bottom: 16px; color: #333; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; color: #666; font-size: 14px; }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-secondary { background: #e8eaed; color: #333; }
+        .btn-secondary:hover { background: #dadce0; }
+        .result { margin-top: 16px; }
+        .result pre { background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-success { background: #d4edda; color: #155724; }
+        .nav { display: flex; gap: 8px; margin-bottom: 16px; }
+        .nav a { padding: 8px 16px; background: #e8eaed; border-radius: 8px; text-decoration: none; color: #333; font-size: 14px; }
+        .nav a.active { background: #1a73e8; color: white; }
+        #tokenDisplay { font-size: 12px; color: #666; word-break: break-all; margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>智能物流追踪系统</h1>
+        <p>订单查询控制台</p>
+    </div>
+    <div class="container">
+        <div class="nav">
+            <a href="#" class="nav-link active" data-page="login">登录</a>
+            <a href="#" class="nav-link" data-page="order">订单查询</a>
+            <a href="#" class="nav-link" data-page="logistics">物流查询</a>
+            <a href="#" class="nav-link" data-page="logs">网关日志</a>
+        </div>
+
+        <!-- Login Page -->
+        <div class="card" id="page-login">
+            <h2>用户登录</h2>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="loginUsername" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码">
+            </div>
+            <button class="btn btn-primary" onclick="doLogin()">登录</button>
+            <div id="tokenDisplay" style="display:none;"></div>
+        </div>
+
+        <!-- Order Page -->
+        <div class="card" id="page-order" style="display:none;">
+            <h2>订单查询</h2>
+            <div class="form-group">
+                <label>订单ID</label>
+                <input type="number" id="orderId" placeholder="请输入订单ID">
+            </div>
+            <button class="btn btn-primary" onclick="queryOrder()">查询订单</button>
+            <div class="result" id="orderResult"></div>
+        </div>
+
+        <!-- Logistics Page -->
+        <div class="card" id="page-logistics" style="display:none;">
+            <h2>物流查询</h2>
+            <div class="form-group">
+                <label>物流单号</label>
+                <input type="text" id="logisticsNo" placeholder="请输入物流单号">
+            </div>
+            <button class="btn btn-primary" onclick="queryLogistics()">查询物流</button>
+            <div class="result" id="logisticsResult"></div>
+        </div>
+
+        <!-- Logs Page -->
+        <div class="card" id="page-logs" style="display:none;">
+            <h2>网关日志查询</h2>
+            <div class="form-group">
+                <label>关键词</label>
+                <input type="text" id="logKeyword" placeholder="路径或用户ID">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>开始时间</label>
+                    <input type="datetime-local" id="logStartTime">
+                </div>
+                <div class="form-group">
+                    <label>结束时间</label>
+                    <input type="datetime-local" id="logEndTime">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="queryLogs()">搜索日志</button>
+            <div class="result" id="logResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let token = '';
+
+        function showPage(name) {
+            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('page-' + name).style.display = '';
+            document.querySelector('[data-page="' + name + '"]').classList.add('active');
+        }
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); });
+        });
+
+        function api(path, method, body) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = 'Bearer ' + token;
+            const opts = { method, headers };
+            if (body) opts.body = JSON.stringify(body);
+            return fetch(path, opts).then(r => r.json());
+        }
+
+        async function doLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            try {
+                const res = await api('/api/users/login', 'POST', { username, password });
+                if (res.code === 200) {
+                    token = res.data.token;
+                    document.getElementById('tokenDisplay').style.display = '';
+                    document.getElementById('tokenDisplay').innerText = 'Token: ' + token;
+                    alert('登录成功!');
+                } else {
+                    alert('登录失败: ' + res.message);
+                }
+            } catch (e) { alert('请求失败: ' + e.message); }
+        }
+
+        async function queryOrder() {
+            const id = document.getElementById('orderId').value;
+            try {
+                const res = await api('/api/orders/' + id, 'GET');
+                document.getElementById('orderResult').innerHTML = '<pre>' + JSON.stringify(res, null, 2) + '</pre>';
+            } catch (e) { alert('请求失败: ' + e.message); }
+        }
+
+        async function queryLogistics() {
+            const no = document.getElementById('logisticsNo').value;
+            try {
+                const res = await api('/api/logistics/' + no, 'GET');
+                document.getElementById('logisticsResult').innerHTML = '<pre>' + JSON.stringify(res, null, 2) + '</pre>';
+            } catch (e) { alert('请求失败: ' + e.message); }
+        }
+
+        async function queryLogs() {
+            const keyword = document.getElementById('logKeyword').value;
+            const startTime = document.getElementById('logStartTime').value;
+            const endTime = document.getElementById('logEndTime').value;
+            let url = '/api/logs/search?';
+            if (keyword) url += 'keyword=' + encodeURIComponent(keyword) + '&';
+            if (startTime) url += 'startTime=' + encodeURIComponent(startTime) + '&';
+            if (endTime) url += 'endTime=' + encodeURIComponent(endTime);
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                document.getElementById('logResult').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (e) { alert('请求失败: ' + e.message); }
+        }
+    </script>
+</body>
+</html>
